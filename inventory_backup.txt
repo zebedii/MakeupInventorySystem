@@ -1,0 +1,4 @@
+3 | Grwm | Blush | 021 | 280.00 | 10
+4 | Matte Lipstick | Lipstick | 001 | 180.00 | 20
+5 | Issy | Foundation | 031 | 499.00 | 50
+8 | Absidy | Blush | 029817 | 399.00 | 53

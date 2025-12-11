@@ -28,12 +28,17 @@ public class InventoryGUI extends JFrame {
     private JButton btnUndo;
     private static final String LOG_FILE = "inventory_log.txt";
     private static final DateTimeFormatter LOG_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private boolean adminMode = false; // set via constructor to toggle admin features
+    private JTextField txtEmpUser;
+    private JPasswordField txtEmpPass;
 
     private ProductDAO dao = new ProductDAO();
+    private UserDAO userDAO = new UserDAO();
     private Product lastDeleted;
     private List<Product> cachedProducts = new ArrayList<>();
 
-    public InventoryGUI() {
+    public InventoryGUI(boolean adminMode) {
+        this.adminMode = adminMode;
         setTitle("Makeup Inventory System");
         setSize(1200, 700);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -118,8 +123,10 @@ public class InventoryGUI extends JFrame {
         filterPanel.add(new JLabel("Max Price:"));
         filterPanel.add(txtMaxPrice);
         filterPanel.add(btnFilter);
-        filterPanel.add(btnExportCsv);
-        filterPanel.add(btnImportCsv);
+        if (this.adminMode) {
+            filterPanel.add(btnExportCsv);
+            filterPanel.add(btnImportCsv);
+        }
         topPanel.add(filterPanel, BorderLayout.SOUTH);
         add(topPanel, BorderLayout.NORTH);
 
@@ -146,8 +153,27 @@ public class InventoryGUI extends JFrame {
         actionPanel.add(btnDelete);
         actionPanel.add(btnClear);
         actionPanel.add(btnUndo);
-        actionPanel.add(btnExport);
+        if (this.adminMode) {
+            actionPanel.add(btnExport);
+        }
         actionPanel.add(lblSummary);
+
+        if (this.adminMode) {
+            JPanel employeePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 4));
+            employeePanel.setBackground(TERTIARY);
+            txtEmpUser = new JTextField(10);
+            txtEmpPass = new JPasswordField(10);
+            JButton btnAddEmp = new JButton("Add Employee");
+            employeePanel.add(new JLabel("Employee Username:"));
+            employeePanel.add(txtEmpUser);
+            employeePanel.add(new JLabel("Password:"));
+            employeePanel.add(txtEmpPass);
+            employeePanel.add(btnAddEmp);
+            employeePanel.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
+            bottomPanel.add(employeePanel, BorderLayout.NORTH);
+
+            btnAddEmp.addActionListener(e -> addEmployee());
+        }
 
         rightPanel.add(btnLogout);
 
@@ -173,9 +199,11 @@ public class InventoryGUI extends JFrame {
             applyFilters();
         });
         btnFilter.addActionListener(e -> applyFilters());
-        btnExport.addActionListener(e -> exportToTxt());
-        btnExportCsv.addActionListener(e -> exportToCsv());
-        btnImportCsv.addActionListener(e -> importFromCsv());
+        if (this.adminMode) {
+            btnExport.addActionListener(e -> exportToTxt());
+            btnExportCsv.addActionListener(e -> exportToCsv());
+            btnImportCsv.addActionListener(e -> importFromCsv());
+        }
         btnLogout.addActionListener(e -> logout());
         btnUndo.addActionListener(e -> undoDelete());
         table.getSelectionModel().addListSelectionListener(e -> fillFieldsFromTable());
@@ -453,6 +481,16 @@ public class InventoryGUI extends JFrame {
             JOptionPane.showMessageDialog(this, "Shade must be numbers only (ex. 001).");
             return null;
         }
+        try {
+            int shadeNum = Integer.parseInt(shade);
+            if (shadeNum > 999) {
+                JOptionPane.showMessageDialog(this, "Shade must be 000 to 999.");
+                return null;
+            }
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(this, "Shade must be numbers only (ex. 001).");
+            return null;
+        }
         double price;
         int items;
         try {
@@ -490,6 +528,23 @@ public class InventoryGUI extends JFrame {
         }
     }
 
+    private void addEmployee() {
+        String user = txtEmpUser.getText().trim();
+        String pass = new String(txtEmpPass.getPassword());
+        if (user.isEmpty() || pass.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Employee username and password are required.");
+            return;
+        }
+        boolean ok = userDAO.createUser(user, pass, "employee");
+        if (ok) {
+            JOptionPane.showMessageDialog(this, "Employee added.");
+            txtEmpUser.setText("");
+            txtEmpPass.setText("");
+        } else {
+            JOptionPane.showMessageDialog(this, "Failed to add employee (maybe duplicate?).");
+        }
+    }
+
     private void logAction(String action, Product p) {
         String entry = String.format("%s | %s | ID:%d | %s | %s | Shade:%s | Price:%.2f | Items:%d%n",
                 LocalDateTime.now().format(LOG_FORMAT),
@@ -509,6 +564,6 @@ public class InventoryGUI extends JFrame {
 
     // ================= MAIN =================
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new InventoryGUI().setVisible(true));
+        SwingUtilities.invokeLater(() -> new InventoryGUI(false).setVisible(true));
     }
 }

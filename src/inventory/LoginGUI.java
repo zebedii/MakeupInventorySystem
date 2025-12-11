@@ -105,9 +105,14 @@ public class LoginGUI extends JFrame {
             return;
         }
 
-        if (userDAO.login(username, password)) {
+        User user = userDAO.loginUser(username, password);
+        if (user != null) {
             JOptionPane.showMessageDialog(this, "Login successful!");
-            new InventoryGUI().setVisible(true); // open inventory
+            if ("admin".equalsIgnoreCase(user.getRole())) {
+                new AdminGUI().setVisible(true); // admin view
+            } else {
+                new InventoryGUI(false).setVisible(true); // employee view
+            }
             dispose(); // close login window
         } else {
             JOptionPane.showMessageDialog(this, "Invalid username or password.");
