@@ -2,11 +2,19 @@ package inventory;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.KeyEvent;
 
 public class LoginGUI extends JFrame {
 
+    private static final Color PRIMARY = new Color(0xFCF8F8);
+    private static final Color SECONDARY = new Color(0xFBEFEF);
+    private static final Color TERTIARY = new Color(0xF9DFDF);
+
     private JTextField txtUser;
     private JPasswordField txtPass;
+    private JButton btnLogin;
+    private int failedAttempts = 0;
+    private static final int MAX_ATTEMPTS = 5;
     private UserDAO userDAO = new UserDAO();
 
     public LoginGUI() {
@@ -15,9 +23,11 @@ public class LoginGUI extends JFrame {
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
+        getContentPane().setBackground(PRIMARY);
 
         JPanel formPanel = new JPanel(new GridBagLayout());
         formPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        formPanel.setBackground(SECONDARY);
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(4, 4, 4, 4);
         gbc.anchor = GridBagConstraints.WEST;
@@ -26,7 +36,7 @@ public class LoginGUI extends JFrame {
         txtUser = new JTextField();
         txtPass = new JPasswordField();
 
-        JButton btnLogin = new JButton("Login");
+        btnLogin = new JButton("Login");
 
         gbc.gridx = 0; gbc.gridy = 0;
         formPanel.add(new JLabel("Username:"), gbc);
@@ -47,6 +57,7 @@ public class LoginGUI extends JFrame {
         JPanel logoPanel = new JPanel();
         logoPanel.setLayout(new BoxLayout(logoPanel, BoxLayout.Y_AXIS));
         logoPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        logoPanel.setBackground(TERTIARY);
         JLabel logoLabel = createLogoLabel();
         JLabel nameLine1 = new JLabel("Makeup");
         JLabel nameLine2 = new JLabel("Inventory System");
@@ -66,6 +77,7 @@ public class LoginGUI extends JFrame {
 
         JPanel contentPanel = new JPanel(new BorderLayout(12, 0));
         contentPanel.setBorder(BorderFactory.createEmptyBorder(10, 12, 10, 12));
+        contentPanel.setBackground(PRIMARY);
         contentPanel.add(logoPanel, BorderLayout.WEST);
         contentPanel.add(formPanel, BorderLayout.CENTER);
 
@@ -73,6 +85,10 @@ public class LoginGUI extends JFrame {
 
         // Events
         btnLogin.addActionListener(e -> doLogin());
+        getRootPane().setDefaultButton(btnLogin);
+        getRootPane().registerKeyboardAction(e -> dispose(),
+                KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0),
+                JComponent.WHEN_IN_FOCUSED_WINDOW);
     }
 
     private void doLogin() {
@@ -84,12 +100,21 @@ public class LoginGUI extends JFrame {
             return;
         }
 
+        if (failedAttempts >= MAX_ATTEMPTS) {
+            JOptionPane.showMessageDialog(this, "Too many failed attempts. Please restart the app.");
+            return;
+        }
+
         if (userDAO.login(username, password)) {
             JOptionPane.showMessageDialog(this, "Login successful!");
             new InventoryGUI().setVisible(true); // open inventory
             dispose(); // close login window
         } else {
             JOptionPane.showMessageDialog(this, "Invalid username or password.");
+            failedAttempts++;
+            if (failedAttempts >= MAX_ATTEMPTS) {
+                btnLogin.setEnabled(false);
+            }
         }
     }
 

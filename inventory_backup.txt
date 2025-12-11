@@ -1,3 +1,0 @@
-3 | Grwm | Blush | 021 | 280.0 | 10
-4 | Matte Lipstick | Lipstick | 001 | 180.0 | 20
-5 | Issy | Foundation | 031 | 499.0 | 50

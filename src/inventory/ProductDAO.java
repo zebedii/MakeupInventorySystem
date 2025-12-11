@@ -5,6 +5,27 @@ import java.util.ArrayList;
 
 public class ProductDAO {
 
+    public boolean existsByNameAndShade(String name, String shade, Integer excludeId) {
+        String sql = "SELECT id FROM products WHERE LOWER(name)=LOWER(?) AND LOWER(shade)=LOWER(?)";
+        if (excludeId != null) {
+            sql += " AND id <> ?";
+        }
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, name);
+            ps.setString(2, shade);
+            if (excludeId != null) {
+                ps.setInt(3, excludeId);
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
     public void addProduct(Product p) {
         String sql = "INSERT INTO products(name, category, shade, price, no_of_items) VALUES(?,?,?,?,?)";
         try (Connection con = DBConnection.getConnection();
